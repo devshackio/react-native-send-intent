@@ -6,9 +6,11 @@ import android.content.ComponentName;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract.Events;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.net.Uri;
 
+import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Calendar;
@@ -216,9 +218,25 @@ public class RNSendIntentModule extends ReactContextBaseJavaModule {
         }
 
         if (options.hasKey("imageUrl")) {
-            Uri uri = Uri.parse(options.getString("imageUrl"));
-            intent.putExtra(Intent.EXTRA_STREAM, uri);
-            intent.setType("image/*");
+            String imageUrl = options.getString("imageUrl");
+            Uri uri = Uri.parse(imageUrl);
+            String authority = options.getString("authority");
+            if (authority != null) {
+                String filename = uri.getLastPathSegment();
+                String fullPath = uri.getPath();
+                int indexOfFilename = fullPath.lastIndexOf(filename);
+                String allButFilename = fullPath.substring(0, indexOfFilename);
+                File newFile = new File(allButFilename, filename);
+                Uri contentUri = FileProvider.getUriForFile(getReactApplicationContext(), authority, newFile);
+
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                intent.setType("image/*");
+            }
+            else {
+                intent.putExtra(Intent.EXTRA_STREAM, uri);
+                intent.setType("image/*");
+            }
         } else {
             intent.setType("text/plain");
         }
