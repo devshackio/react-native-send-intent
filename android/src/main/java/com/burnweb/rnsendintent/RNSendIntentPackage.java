@@ -20,12 +20,12 @@ public class RNSendIntentPackage implements ReactPackage {
     }
 
     @Override
-    public List<Class<? extends JavaScriptModule>> createJSModules() {
+    public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
         return Collections.emptyList();
     }
 
-    @Override
-    public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
+    // Deprecated RN 0.47
+    public List<Class<? extends JavaScriptModule>> createJSModules() {
         return Collections.emptyList();
     }
 

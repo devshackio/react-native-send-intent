@@ -32,6 +32,12 @@ var SendIntentAndroid = {
     addCalendarEvent(config) {
         RNSendIntentAndroid.addCalendarEvent(config.title, config.description, config.startDate, config.endDate, config.recurrence, config.location, config.isAllDay||false);
     },
+    isAppInstalled(packageName) {
+        return RNSendIntentAndroid.isAppInstalled(packageName);
+    },
+    openApp(packageName, extras) {
+        return RNSendIntentAndroid.openApp(packageName, (extras || {}));
+    },
     openCalendar() {
         RNSendIntentAndroid.openCalendar();
     },
@@ -43,7 +49,19 @@ var SendIntentAndroid = {
     },
     openMaps(query) {
         RNSendIntentAndroid.openMaps(query);
-    }
+    },
+    openCamera() {
+        RNSendIntentAndroid.openCamera();
+    },
+    openMapsWithRoute(query, mode) {
+        RNSendIntentAndroid.openMapsWithRoute(query, mode);
+    },
+    shareTextToLine(options: Object) {
+        RNSendIntentAndroid.shareTextToLine(options);
+    },
+    shareImageToInstagram(type, mediaPath) {
+        RNSendIntentAndroid.shareImageToInstagram(type, mediaPath);
+    },
 };
 
 module.exports = SendIntentAndroid;

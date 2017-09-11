@@ -18,14 +18,17 @@ import java.util.Arrays;
 import java.lang.SecurityException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.io.File;
 
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.NativeModule;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableMapKeySetIterator;
 
 public class RNSendIntentModule extends ReactContextBaseJavaModule {
 
@@ -67,9 +70,19 @@ public class RNSendIntentModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void openCamera() {
+      //Needs permission "android.permission.CAMERA"
+      Intent sendIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+      sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      if (sendIntent.resolveActivity(this.reactContext.getPackageManager()) != null) {
+          this.reactContext.startActivity(sendIntent);
+      }
+    }
+
+    @ReactMethod
     public void sendPhoneCall(String phoneNumberString) {
       //Needs permission "android.permission.CALL_PHONE"
-      Intent sendIntent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phoneNumberString.trim()));
+      Intent sendIntent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phoneNumberString.replaceAll("#", "%23").trim()));
       sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
       //Check that an app exists to receive the intent
@@ -192,6 +205,37 @@ public class RNSendIntentModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void isAppInstalled(String packageName, final Promise promise) {
+        Intent sendIntent = this.reactContext.getPackageManager().getLaunchIntentForPackage(packageName);
+        if (sendIntent == null) {
+            promise.resolve(false);
+            return;
+        }
+
+        promise.resolve(true);
+    }
+
+    @ReactMethod
+    public void openApp(String packageName, ReadableMap extras, final Promise promise) {
+        Intent sendIntent = this.reactContext.getPackageManager().getLaunchIntentForPackage(packageName);
+        if (sendIntent == null) {
+            promise.resolve(false);
+            return;
+        }
+
+        final ReadableMapKeySetIterator it = extras.keySetIterator();
+        while(it.hasNextKey()) {
+          final String key = it.nextKey();
+          final String value = extras.getString(key);
+          sendIntent.putExtra(key, value);
+        }
+
+        sendIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        this.reactContext.startActivity(sendIntent);
+        promise.resolve(true);
+    }
+
+    @ReactMethod
     public void openCalendar() {
       ComponentName cn = new ComponentName("com.android.calendar", "com.android.calendar.LaunchActivity");
 
@@ -237,6 +281,14 @@ public class RNSendIntentModule extends ReactContextBaseJavaModule {
                 intent.putExtra(Intent.EXTRA_STREAM, uri);
                 intent.setType("image/*");
             }
+        } else if (options.hasKey("videoUrl")) {
+            File media = new File(options.getString("videoUrl"));
+            Uri uri = Uri.fromFile(media);
+            if(!options.hasKey("subject")) {
+              intent.putExtra(Intent.EXTRA_SUBJECT,"Untitled_Video");
+            }
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            intent.setType("video/*");
         } else {
             intent.setType("text/plain");
         }
@@ -260,4 +312,55 @@ public class RNSendIntentModule extends ReactContextBaseJavaModule {
         this.reactContext.startActivity(sendIntent);
       }
     }
+
+    @ReactMethod
+    public void openMapsWithRoute(String query, String mode) {
+        Uri gmmIntentUri = Uri.parse("google.navigation:q="+query+"&mode="+mode);
+
+        Intent sendIntent = new Intent(android.content.Intent.ACTION_VIEW, gmmIntentUri);
+        sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        //Check that an app exists to receive the intent
+        if (sendIntent.resolveActivity(this.reactContext.getPackageManager()) != null) {
+            this.reactContext.startActivity(sendIntent);
+        }
+    }
+
+
+    @ReactMethod
+    public void shareTextToLine(ReadableMap options) {
+
+        ComponentName cn = new ComponentName("jp.naver.line.android"
+                , "jp.naver.line.android.activity.selectchat.SelectChatActivity");
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND);
+        shareIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        shareIntent.setType("text/plain");
+
+        if (options.hasKey("text")) {
+            shareIntent.putExtra(Intent.EXTRA_TEXT, options.getString("text"));
+        }
+
+        shareIntent.setComponent(cn);
+        this.reactContext.startActivity(shareIntent);
+
+    }
+
+
+    @ReactMethod
+    public void shareImageToInstagram(String mineType, String mediaPath) {
+
+        Intent sendIntent = new Intent();
+        sendIntent.setPackage("com.instagram.android");
+        sendIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.setType(mineType);
+
+        Uri uri = Uri.parse(mediaPath);
+        sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
+
+        this.reactContext.startActivity(sendIntent);
+
+    }
+
 }
